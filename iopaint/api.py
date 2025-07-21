@@ -271,22 +271,38 @@ class Api:
     def api_inpaint(self, req: InpaintRequest):
         image, alpha_channel, infos, ext = decode_base64_to_image(req.image)
         mask, _, _, _ = decode_base64_to_image(req.mask, gray=True)
+        print(f"mask shape: {None if mask is None else mask.shape}")
+        print(f"mask shape: {None if image is None else image.shape}")
+
         logger.info(f"image ext: {ext}")
+        print(f" 0.1 {ext}")
 
         mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)[1]
+        logger.info(" 1")
+
         if image.shape[:2] != mask.shape[:2]:
             raise HTTPException(
                 400,
                 detail=f"Image size({image.shape[:2]}) and mask size({mask.shape[:2]}) not match.",
             )
+        logger.info(" 2")
+        
 
         start = time.time()
+
         rgb_np_img = self.model_manager(image, mask, req)
+        logger.info(" 3")
+
         logger.info(f"process time: {(time.time() - start) * 1000:.2f}ms")
         torch_gc()
+        logger.info(" 4")
+
 
         rgb_np_img = cv2.cvtColor(rgb_np_img.astype(np.uint8), cv2.COLOR_BGR2RGB)
+        logger.info(" 5")
+
         rgb_res = concat_alpha_channel(rgb_np_img, alpha_channel)
+        logger.info(" 6")
 
         res_img_bytes = pil_to_bytes(
             Image.fromarray(rgb_res),
@@ -294,8 +310,11 @@ class Api:
             quality=self.config.quality,
             infos=infos,
         )
+        logger.info(" 7")
+
 
         asyncio.run(self.sio.emit("diffusion_finish"))
+        logger.info(" 8")
 
         return Response(
             content=res_img_bytes,

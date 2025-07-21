@@ -30,7 +30,7 @@ class RealESRGANer:
     def __init__(
         self,
         scale,
-        model_path,
+        model_path = "Users/oussa/.cache/torch/hub/checkpoints/RealESRGAN_x4plus.pth",
         dni_weight=None,
         model=None,
         tile=0,
